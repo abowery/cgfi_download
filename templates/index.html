@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGFI Web Catalog</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center"><b>CGFI Web Catalog</b></h1>
+        <form method="POST">
+            <div class="form-group">
+                <input type="text" class="form-control" name="search_query" placeholder="Search by title">
+            </div>
+            <button type="submit" class="btn btn-primary mb-4">Search</button>
+
+            <div class="row">
+                <div class="col-md-3">
+	            <h5><b>Date Range</b></h5>
+                    <div class="form-group">
+                        <label for="from_date">From date:</label>
+                        <input type="date" class="form-control" name="from_date">
+                    </div>
+                    <div class="form-group">
+                        <label for="to_date">To date:</label>
+                        <input type="date" class="form-control" name="to_date">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <h5><b>Source</b></h5>
+                    {% for source in sources %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="source" value="{{ source['description'] }}">
+                            <label class="form-check-label">{{ source['description'] }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-3">
+                    <h5><b>Subject</b></h5>
+                    {% for subject in subjects %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="subject" value="{{ subject['description'] }}">
+                            <label class="form-check-label">{{ subject['description'] }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-3">
+                    <h5><b>Formats</b></h5>
+                    {% for format in formats %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="format" value="{{ format['description'] }}">
+                            <label class="form-check-label">{{ format['description'] }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </form>
+
+        {% if datasets %}
+            <h2 class="mt-5">Search Results</h2>
+            <ul class="list-group">
+                {% for dataset in datasets %}
+                    <li class="list-group-item">
+                        <a href="{{ url_for('download', version_uuid=dataset['version_uuid']) }}">{{ dataset['title'] }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+
