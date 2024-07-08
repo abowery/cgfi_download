@@ -5,15 +5,15 @@ This code downloads the metadata from the DAFNI CLI service, it uses this to pop
 
 To run the webservice, install the dafni-cli pip libary:
 
-pip install dafni-cli
+<b>pip install dafni-cli</b>
 
 You will need a login to dafni data service. Then populate the metadata database:
 
-./populate_dafni_metadata_database.py
+<b>./populate_dafni_metadata_database.py</b>
 
 And run the webservice:
 
-python app.py
+<b>python app.py</b>
 
 This will open a page locally at:
 
