@@ -1,14 +1,5 @@
 from flask import Flask, render_template, request, send_file
-import sqlite3
-import subprocess
-import os
-import shutil
-import tempfile
-import zipfile
-import time
-import random
-import pathlib
-import pexpect
+import sqlite3, subprocess, os, shutil, tempfile, zipfile, time, random, pathlib, pexpect
 from datetime import datetime
 
 app = Flask(__name__)
