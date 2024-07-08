@@ -15,6 +15,6 @@ And run the webservice:
 
 <b>python app.py</b>
 
-This will open a page locally at:
+This will enable the service to be available locally at:
 
 http://127.0.0.1:5000/
