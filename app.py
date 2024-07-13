@@ -154,7 +154,7 @@ def download(version_uuid):
     i = child.expect(['Password: ','Username: '])
     if i == 0:
       print('Username accepted')
-      child.sendline('taste-with-victory-6$')
+      child.sendline('CGFI_PASSWORD')
       j = child.expect(['Logged in as cgfi-service-account','Password: '])
       if j == 0:
          print('Login successful')
