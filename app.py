@@ -1,12 +1,21 @@
-from flask import Flask, render_template, request, send_file
-import sqlite3, subprocess, os, shutil, tempfile, zipfile, time, random, pathlib, pexpect
+from flask import Flask, render_template, request, jsonify, send_file
+import sqlite3
+import subprocess
+import os
+import shutil
+import tempfile
+import zipfile
+import time
+import random
+import pathlib
+import pexpect
 from datetime import datetime
 
 app = Flask(__name__)
 
 # Database connection function
 def get_db_connection():
-    conn = sqlite3.connect('dafni_metadata_database')
+    conn = sqlite3.connect('example.db')
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -78,43 +87,13 @@ def update_dates_to_unix():
     conn.commit()
     conn.close()
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 def index():
-    datasets = []
-    if request.method == 'POST':
-        search_query = request.form.get('search_query', '')
-        from_date_str = request.form.get('from_date', '')
-        to_date_str = request.form.get('to_date', '')
-        sources = request.form.getlist('source')
-        subjects = request.form.getlist('subject')
-        formats = request.form.getlist('format')
-
-        query = 'SELECT * FROM datasets WHERE title LIKE ?'
-        params = [f'%{search_query}%']
-
-        if from_date_str:
-            from_date_unix = convert_to_unix_time(from_date_str, date_format='%d/%m/%Y')
-            query += ' AND date_range_begin >= ?'
-            params.append(from_date_unix)
-        if to_date_str:
-            to_date_unix = convert_to_unix_time(to_date_str, date_format='%d/%m/%Y')
-            query += ' AND date_range_end <= ?'
-            params.append(to_date_unix)
-        if sources:
-            query += ' AND source IN (' + ','.join('?' for _ in sources) + ')'
-            params.extend(sources)
-        if subjects:
-            query += ' AND subject IN (' + ','.join('?' for _ in subjects) + ')'
-            params.extend(subjects)
-        if formats:
-            query += ' AND format IN (' + ','.join('?' for _ in formats) + ')'
-            params.extend(formats)
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(query, params)
-        datasets = cursor.fetchall()
-        conn.close()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM datasets')
+    datasets = cursor.fetchall()
+    conn.close()
 
     sources = get_distinct_values('sources', 'description')
     subjects = get_distinct_values('subjects', 'description')
@@ -122,19 +101,60 @@ def index():
 
     return render_template('index.html', datasets=datasets, sources=sources, subjects=subjects, formats=formats)
 
+@app.route('/filter_datasets', methods=['POST'])
+def filter_datasets():
+    search_query = request.form.get('search_query', '')
+    from_date_str = request.form.get('from_date', '')
+    to_date_str = request.form.get('to_date', '')
+    sources = request.form.getlist('sources[]')
+    subjects = request.form.getlist('subjects[]')
+    formats = request.form.getlist('formats[]')
+
+    query = 'SELECT * FROM datasets WHERE 1=1'
+    params = []
+
+    if search_query:
+        query += ' AND title LIKE ?'
+        params.append(f'%{search_query}%')
+    if from_date_str:
+        from_date_unix = convert_to_unix_time(from_date_str, date_format='%d/%m/%Y')
+        query += ' AND date_range_begin >= ?'
+        params.append(from_date_unix)
+    if to_date_str:
+        to_date_unix = convert_to_unix_time(to_date_str, date_format='%d/%m/%Y')
+        query += ' AND date_range_end <= ?'
+        params.append(to_date_unix)
+    if sources:
+        query += ' AND source IN (' + ','.join('?' for _ in sources) + ')'
+        params.extend(sources)
+    if subjects:
+        query += ' AND subject IN (' + ','.join('?' for _ in subjects) + ')'
+        params.extend(subjects)
+    if formats:
+        query += ' AND format IN (' + ','.join('?' for _ in formats) + ')'
+        params.extend(formats)
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(query, params)
+    datasets = cursor.fetchall()
+    conn.close()
+
+    return jsonify(datasets=[dict(row) for row in datasets])
+
 @app.route('/download/<version_uuid>', methods=['GET'])
 def download(version_uuid):
 
     # Note: ensure the dafni-cli pip library is installed first
-
-    dafni_login = str(pathlib.Path().resolve()) + "/../../.local/bin/dafni login"
+    dafni_command = str(pathlib.Path().resolve()) + "/../../.local/bin/dafni"
+    dafni_login = dafni_command + " login"
     child = pexpect.spawn(dafni_login)
     child.expect('Username: ')
     i = child.sendline('cgfi-service-account')
     i = child.expect(['Password: ','Username: '])
     if i == 0:
       print('Username accepted')
-      child.sendline('CGFI_PASSWORD')
+      child.sendline('taste-with-victory-6$')
       j = child.expect(['Logged in as cgfi-service-account','Password: '])
       if j == 0:
          print('Login successful')
@@ -143,35 +163,22 @@ def download(version_uuid):
     elif i == 1:
       print('Username not accepted')
 
-
     # Create a temporary directory in the same location as app.py
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    temp_dir = os.path.join(base_dir, 'temp_download_' + str(random.randint(1,1000)))
+    temp_dir = os.path.join(os.path.dirname(__file__), 'temp_download_' + str(random.randint(1000, 9999)))
     os.makedirs(temp_dir, exist_ok=True)
+
     try:
         # Run the dafni download dataset command and save to temp_dir
         os.chdir(temp_dir)
-        subprocess.run(['dafni', 'download', 'dataset', version_uuid], check=True)
-        subprocess.run(['dafni', 'logout'], check=True)
+        subprocess.run([dafni_command, 'download', 'dataset', version_uuid], check=True)
+        subprocess.run([dafni_command, 'logout'], check=True)
         os.chdir("..") 
+        
+        zip_filename = os.path.join(os.path.dirname(__file__), f'{version_uuid}.zip')
+        shutil.make_archive(zip_filename.replace('.zip', ''), 'zip', temp_dir)
 
-        # Zip the contents of the temp_dir
-        zip_filename = f'{version_uuid}.zip'
-        zip_filepath = os.path.join(temp_dir, zip_filename)
-        with zipfile.ZipFile(zip_filepath, 'w') as zipf:
-            for root, dirs, files in os.walk(temp_dir):
-                for file in files:
-                    if file != zip_filename:  # Exclude the zip file itself
-                        file_path = os.path.join(root, file)
-                        zipf.write(file_path, os.path.relpath(file_path, temp_dir))
-
-        return send_file(zip_filepath, as_attachment=True)
-    except subprocess.CalledProcessError as e:
-        return f"An error occurred: {e}", 500
-    except Exception as e:
-        return f"An error occurred during zipping: {e}", 500
+        return send_file(zip_filename, as_attachment=True)
     finally:
-        # Clean up: remove the temporary directory and its contents
         shutil.rmtree(temp_dir)
 
 if __name__ == '__main__':
