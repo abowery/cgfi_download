@@ -3,9 +3,9 @@
 
 This code downloads the metadata from the DAFNI CLI service, it uses this to populate a database. This enables a basic webservice to query the metadata and allow the downloading of the datasets hosted by the DAFNI service without authentication. This work was done for the CGFI project (July 2024)
 
-To run the webservice, install the dafni-cli pip libary:
+To run the webservice, install the dafni-cli and flask pip libraries:
 
-<b>pip install dafni-cli</b>
+<b>pip install dafni-cli flask</b>
 
 You will need a login to dafni data service. Then populate the metadata database:
 
@@ -13,7 +13,7 @@ You will need a login to dafni data service. Then populate the metadata database
 
 And run the webservice:
 
-<b>python app.py</b>
+<b>python3 app.py</b>
 
 This will enable the service to be available locally at:
 
