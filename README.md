@@ -5,7 +5,7 @@ This code downloads the metadata from the DAFNI CLI service, it uses this to pop
 
 To run the webservice, install the dafni-cli and flask pip libraries:
 
-<b>pip install dafni-cli flask</b>
+<b>pip3 install dafni-cli flask pexpect</b>
 
 You will need a login to dafni data service. Then populate the metadata database:
 
