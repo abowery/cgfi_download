@@ -155,6 +155,8 @@ def download(version_uuid):
     i = child.expect(['Password: ','Username: '])
     if i == 0:
       print('Username accepted')
+
+      # Change CGFI_PASSWORD to password for accessing the DAFNI service
       child.sendline('CGFI_PASSWORD')
       j = child.expect(['Logged in as cgfi-service-account','Password: '])
       if j == 0:
