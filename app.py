@@ -146,7 +146,8 @@ def filter_datasets():
 def download(version_uuid):
 
     # Note: ensure the dafni-cli pip library is installed first
-    dafni_command = str(pathlib.Path().resolve()) + "/../../.local/bin/dafni"
+    # Change 'PATH_TO_CGFI_DOWNLOAD' to installed directory
+    dafni_command = "PATH_TO_CGFI_DOWNLOAD" + "/cgfi_download/./venv/bin/dafni"
     dafni_login = dafni_command + " login"
     child = pexpect.spawn(dafni_login)
     child.expect('Username: ')
