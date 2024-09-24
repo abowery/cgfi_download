@@ -1,6 +1,6 @@
 #! /usr/bin/python3
 
-import pexpect, sys, json, sqlite3, subprocess
+import pexpect, sys, json, sqlite3, subprocess, pathlib
 from subprocess import Popen, PIPE
 
 
