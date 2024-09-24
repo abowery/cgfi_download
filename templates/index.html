@@ -85,9 +85,9 @@
                 <h5 class="title">Formats</h5>
                 {% for format in formats %}
                     <div class="form-check">
-                        <input class="form-check-input filter-checkbox" type="checkbox" name="format" value="{{ format['description'] }}">
+                        <input class="form-check-input filter-checkbox" type="checkbox" name="format" value="{{ format.description }}">
                         <label class="form-check-label">
-                            {{ format['description'] }}
+                            {{ format.description.split('/')[1].replace('vnd.','') }}
                         </label>
                     </div>
                 {% endfor %}
