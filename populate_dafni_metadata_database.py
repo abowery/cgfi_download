@@ -12,6 +12,10 @@ def create_database(db_name):
 
     # Create 'formats' table
     cursor.execute('''
+    DROP TABLE IF EXISTS formats
+    ''')
+    
+    cursor.execute('''
     CREATE TABLE IF NOT EXISTS formats (
         description TEXT(100),
         identifier INTEGER(100)
@@ -19,6 +23,10 @@ def create_database(db_name):
     ''')
 
     # Create 'sources' table
+    cursor.execute('''
+    DROP TABLE IF EXISTS sources
+    ''')
+    
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS sources (
         description TEXT,
@@ -28,6 +36,10 @@ def create_database(db_name):
 
     # Create 'subjects' table
     cursor.execute('''
+    DROP TABLE IF EXISTS subjects
+    ''')
+    
+    cursor.execute('''
     CREATE TABLE IF NOT EXISTS subjects (
         description TEXT,
         identifier NUMERIC
@@ -35,6 +47,10 @@ def create_database(db_name):
     ''')
 
     # Create 'datasets' table
+    cursor.execute('''
+    DROP TABLE IF EXISTS datasets
+    ''')
+    
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS datasets (
         title TEXT,
