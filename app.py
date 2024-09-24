@@ -28,26 +28,6 @@ def get_distinct_values(table, column):
     conn.close()
     return values
 
-# Function to split 'text' values in formats table and remove 'vnd.' if present
-def get_formatted_values():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT description, identifier FROM formats')
-    formats = cursor.fetchall()
-    conn.close()
-    
-    formatted_values = []
-    for format in formats:
-        text_parts = format['description'].split('/')
-        if len(text_parts) > 1:
-            second_word = text_parts[1]
-            if second_word.startswith('vnd.'):
-                second_word = second_word[4:]
-            formatted_values.append({'description': second_word, 'identifier': format['identifier']})
-        else:
-            formatted_values.append({'description': format['description'], 'identifier': format['identifier']})
-    return formatted_values
-
 # Function to convert date to Unix time
 def convert_to_unix_time(date_str, date_format='%Y-%m-%d'):
     try:
@@ -97,7 +77,7 @@ def index():
 
     sources = get_distinct_values('sources', 'description')
     subjects = get_distinct_values('subjects', 'description')
-    formats = get_formatted_values()
+    formats = get_distinct_values('formats', 'description')
 
     return render_template('index.html', datasets=datasets, sources=sources, subjects=subjects, formats=formats)
 
