@@ -183,6 +183,7 @@ def download(version_uuid):
         return send_file(zip_filename, as_attachment=True)
     finally:
         shutil.rmtree(temp_dir)
+        os.remove(zip_filename)
 
 if __name__ == '__main__':
     update_dates_to_unix()  # Convert date columns to Unix time on startup
