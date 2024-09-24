@@ -137,7 +137,7 @@ def print_database_contents(db_name):
 def interact_with_dafni():
 
     # Login to dafni service
-    dafni_exec = str(pathlib.Path().resolve()) + "/../../.local/bin/dafni"
+    dafni_exec = "/PATH_TO_CGFI_DOWNLOAD/cgfi_download/./venv/bin/dafni"
     dafni_login = dafni_exec + " login"
     child = pexpect.spawn(dafni_login)
     #child.logfile = sys.stdout.buffer
