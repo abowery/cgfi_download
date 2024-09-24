@@ -15,7 +15,7 @@ app = Flask(__name__)
 
 # Database connection function
 def get_db_connection():
-    conn = sqlite3.connect('dafni_metadata_database')
+    conn = sqlite3.connect('/PATH_TO_CGFI_DOWNLOAD/cgfi_download/dafni_metadata_database')
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -147,7 +147,7 @@ def download(version_uuid):
 
     # Note: ensure the dafni-cli pip library is installed first
     # Change 'PATH_TO_CGFI_DOWNLOAD' to installed directory
-    dafni_command = "PATH_TO_CGFI_DOWNLOAD" + "/cgfi_download/./venv/bin/dafni"
+    dafni_command = "/PATH_TO_CGFI_DOWNLOAD/cgfi_download/./venv/bin/dafni"
     dafni_login = dafni_command + " login"
     child = pexpect.spawn(dafni_login)
     child.expect('Username: ')
