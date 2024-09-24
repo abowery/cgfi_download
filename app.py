@@ -83,9 +83,9 @@ def index():
 
 @app.route('/filter_datasets', methods=['POST'])
 def filter_datasets():
-    search_query = request.form.get('search_query', '')
-    from_date_str = request.form.get('from_date', '')
-    to_date_str = request.form.get('to_date', '')
+    search_query = request.form.get('search_query', '').strip()
+    from_date_str = request.form.get('from_date', '').strip()
+    to_date_str = request.form.get('to_date', '').strip()
     sources = request.form.getlist('sources[]')
     subjects = request.form.getlist('subjects[]')
     formats = request.form.getlist('formats[]')
@@ -105,13 +105,13 @@ def filter_datasets():
         query += ' AND date_range_end <= ?'
         params.append(to_date_unix)
     if sources:
-        query += ' AND source IN (' + ','.join('?' for _ in sources) + ')'
+        query += ' AND source IN ({})'.format(','.join(['?'] * len(sources)))
         params.extend(sources)
     if subjects:
-        query += ' AND subject IN (' + ','.join('?' for _ in subjects) + ')'
+        query += ' AND subject IN ({})'.format(','.join(['?'] * len(subjects)))
         params.extend(subjects)
     if formats:
-        query += ' AND format IN (' + ','.join('?' for _ in formats) + ')'
+        query += ' AND format IN ({})'.format(','.join(['?'] * len(formats)))
         params.extend(formats)
 
     conn = get_db_connection()
