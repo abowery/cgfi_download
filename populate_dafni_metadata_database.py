@@ -148,6 +148,8 @@ def interact_with_dafni():
     # Populate database
     populate_database('dafni_metadata_database', data)
 
+    # Log out of dafni service
+    subprocess.call([dafni_exec,"logout"])
 
 
 if __name__ == '__main__':
@@ -205,6 +207,3 @@ if __name__ == '__main__':
  
     # Print the contents of the database
     #print_database_contents(db_name)
-
-    # Finally log out of dafni service
-    subprocess.call([dafni_exec,"logout"])
