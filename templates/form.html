@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Access Form</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background: #f8f9fa;
+            padding-top: 60px;
+        }
+        .form-container {
+            max-width: 600px;
+            background: white;
+            padding: 30px;
+            margin: auto;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>DAFNI Open Access Datasets</h2>
+        <h6>Please enter your organisation, role and purpose for using this data. This information provides us with information on data usage.</h6>
+        <form method="POST">
+            <div class="form-group">
+                <label for="organisation">Your organisation</label>
+                <input type="text" class="form-control" id="organisation" name="organisation" required>
+            </div>
+            <div class="form-group">
+                <label for="role">Your role</label>
+                <input type="text" class="form-control" id="role" name="role" required>
+            </div>
+            <div class="form-group">
+                <label for="purpose">Purpose for using this data</label>
+                <textarea class="form-control" id="purpose" name="purpose" rows="3" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Continue to DAFNI Datasets Download</button>
+        </form>
+    </div>
+</body>
+</html>
