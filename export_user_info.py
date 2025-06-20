@@ -3,7 +3,7 @@
 import sqlite3
 import csv
 
-def export_user_info_to_csv(db_path='dafni_metadata_database', output_csv='user_info_export.csv'):
+def export_user_info_to_csv(db_path='dafni_metadata_database', output_csv='user_info/user_info_export.csv'):
     try:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
