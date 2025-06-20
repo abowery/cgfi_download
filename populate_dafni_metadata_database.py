@@ -10,6 +10,21 @@ def create_database(db_name):
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
 
+    # Create 'user_info' table
+    cursor.execute('''
+    DROP TABLE IF EXISTS user_into
+    ''')
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS user_info (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        organisation TEXT NOT NULL,
+        role TEXT NOT NULL,
+        purpose TEXT NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    ''')
+    
     # Create 'formats' table
     cursor.execute('''
     DROP TABLE IF EXISTS formats
@@ -223,3 +238,6 @@ if __name__ == '__main__':
  
     # Print the contents of the database
     #print_database_contents(db_name)
+
+    # Finally log out of dafni service
+    #subprocess.call([dafni_exec,"logout"])
