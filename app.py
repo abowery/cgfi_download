@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, redirect, session, url_for
 import sqlite3
 import subprocess
 import os
@@ -12,12 +12,8 @@ import pexpect
 from datetime import datetime
 
 app = Flask(__name__)
+app.secret_key = 'SECRET_KEY_HERE'
 
-# Database connection function
-def get_db_connection():
-    conn = sqlite3.connect('/PATH_TO_CGFI_DOWNLOAD/cgfi_download/dafni_metadata_database')
-    conn.row_factory = sqlite3.Row
-    return conn
 
 # Function to fetch distinct values from a table
 def get_distinct_values(table, column):
@@ -27,6 +23,7 @@ def get_distinct_values(table, column):
     values = cursor.fetchall()
     conn.close()
     return values
+
 
 # Function to convert date to Unix time
 def convert_to_unix_time(date_str, date_format='%Y-%m-%d'):
@@ -38,6 +35,7 @@ def convert_to_unix_time(date_str, date_format='%Y-%m-%d'):
     except ValueError:
         # If conversion fails, it might already be Unix time, so return it as is
         return int(date_str)
+
 
 # Function to update date columns to Unix time
 def update_dates_to_unix():
@@ -67,60 +65,79 @@ def update_dates_to_unix():
     conn.commit()
     conn.close()
 
-@app.route('/', methods=['GET'])
-def index():
+
+# Function to convert date from 'dd/mm/yyyy' to Unix timestamp
+def date_to_unix(date_str):
+    try:
+        return int(time.mktime(datetime.strptime(date_str, '%d/%m/%Y').timetuple()))
+    except ValueError:
+        return None
+
+
+# Database connection function
+def get_db_connection():
+    conn = sqlite3.connect('/PATH_TO_CGFI_DOWNLOAD/cgfi_download/dafni_metadata_database')
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+# Function to get all sources, subjects, and formats from the database
+def get_filters():
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM datasets')
-    datasets = cursor.fetchall()
+
+    sources = conn.execute('SELECT description FROM sources').fetchall()
+    subjects = conn.execute('SELECT description FROM subjects').fetchall()
+    formats = conn.execute('SELECT description FROM formats').fetchall()
+
     conn.close()
 
-    sources = get_distinct_values('sources', 'description')
-    subjects = get_distinct_values('subjects', 'description')
-    formats = get_distinct_values('formats', 'description')
+    # Format the formats to display the second word without 'vnd.'
+    #formats = [(f[0].split('/')[-1].replace('vnd.', ''),) for f in formats]
+    formats_display = [(f[0].split('/')[-1].replace('vnd.', ''), f[0]) for f in formats]
 
-    return render_template('index.html', datasets=datasets, sources=sources, subjects=subjects, formats=formats)
+    return sources, subjects, formats_display
 
-@app.route('/filter_datasets', methods=['POST'])
-def filter_datasets():
-    search_query = request.form.get('search_query', '').strip()
-    from_date_str = request.form.get('from_date', '').strip()
-    to_date_str = request.form.get('to_date', '').strip()
-    sources = request.form.getlist('sources[]')
-    subjects = request.form.getlist('subjects[]')
-    formats = request.form.getlist('formats[]')
 
-    query = 'SELECT * FROM datasets WHERE 1=1'
+# Function to query datasets based on filters
+def get_datasets(search=None, from_date=None, to_date=None, sources=None, subjects=None, formats=None):
+    query = 'SELECT title, description, date_range_begin, date_range_end, source, format, subject, version_uuid FROM datasets WHERE 1=1'
     params = []
 
-    if search_query:
+    # Search by title
+    if search:
         query += ' AND title LIKE ?'
-        params.append(f'%{search_query}%')
-    if from_date_str:
-        from_date_unix = convert_to_unix_time(from_date_str, date_format='%d/%m/%Y')
+        params.append(f'%{search}%')
+
+    # Filter by date range
+    if from_date:
         query += ' AND date_range_begin >= ?'
-        params.append(from_date_unix)
-    if to_date_str:
-        to_date_unix = convert_to_unix_time(to_date_str, date_format='%d/%m/%Y')
+        params.append(from_date)
+
+    if to_date:
         query += ' AND date_range_end <= ?'
-        params.append(to_date_unix)
+        params.append(to_date)
+
+    # Filter by sources
     if sources:
-        query += ' AND source IN ({})'.format(','.join(['?'] * len(sources)))
+        query += ' AND source IN ({})'.format(','.join('?' * len(sources)))
         params.extend(sources)
+
+    # Filter by subjects
     if subjects:
-        query += ' AND subject IN ({})'.format(','.join(['?'] * len(subjects)))
+        query += ' AND subject IN ({})'.format(','.join('?' * len(subjects)))
         params.extend(subjects)
+
+    # Filter by formats
     if formats:
-        query += ' AND format IN ({})'.format(','.join(['?'] * len(formats)))
+        query += ' AND format IN ({})'.format(','.join('?' * len(formats)))
         params.extend(formats)
 
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(query, params)
-    datasets = cursor.fetchall()
+    datasets = conn.execute(query, params).fetchall()
     conn.close()
 
-    return jsonify(datasets=[dict(row) for row in datasets])
+    return datasets
+
 
 @app.route('/download/<version_uuid>', methods=['GET'])
 def download(version_uuid):
@@ -128,6 +145,7 @@ def download(version_uuid):
     # Note: ensure the dafni-cli pip library is installed first
     # Change 'PATH_TO_CGFI_DOWNLOAD' to installed directory
     dafni_command = "/PATH_TO_CGFI_DOWNLOAD/cgfi_download/./venv/bin/dafni"
+    subprocess.run([dafni_command, 'logout'], check=True)
     dafni_login = dafni_command + " login"
     child = pexpect.spawn(dafni_login)
     child.expect('Username: ')
@@ -164,6 +182,61 @@ def download(version_uuid):
     finally:
         shutil.rmtree(temp_dir)
         os.remove(zip_filename)
+
+
+@app.route('/start', methods=['GET', 'POST'])
+def start():
+    if request.method == 'POST':
+        organisation = request.form.get('organisation')
+        role = request.form.get('role')
+        purpose = request.form.get('purpose')
+
+        if organisation and role and purpose:
+            conn = get_db_connection()
+            conn.execute(
+                'INSERT INTO user_info (organisation, role, purpose) VALUES (?, ?, ?)',
+                (organisation, role, purpose)
+            )
+            conn.commit()
+            conn.close()
+            session['form_completed'] = True
+            return redirect(url_for('index'))
+    return render_template('form.html')
+
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+
+    if not session.get('form_completed'):
+        return redirect(url_for('start'))
+
+    # Get available filters
+    sources, subjects, formats_display = get_filters()
+
+    # Handle search and filters
+    search = request.form.get('search', 'cgfi')  # Default search value 'cgfi'
+
+    from_date_str = request.form.get('from_date', '').strip()
+    to_date_str = request.form.get('to_date', '').strip()
+
+    if from_date_str:
+        from_date_unix = convert_to_unix_time(from_date_str, date_format='%d/%m/%Y')
+    else:
+        from_date_unix = ''
+    if to_date_str:
+        to_date_unix = convert_to_unix_time(to_date_str, date_format='%d/%m/%Y')
+    else:
+        to_date_unix = ''
+
+    selected_sources = request.form.getlist('sources')
+    selected_subjects = request.form.getlist('subjects')
+    selected_formats = request.form.getlist('formats')
+
+    # Get datasets based on filters
+    datasets = get_datasets(search, str(from_date_unix), str(to_date_unix), selected_sources, selected_subjects, selected_formats)
+
+    return render_template('index.html', sources=sources, subjects=subjects, formats=formats_display, datasets=datasets)
+
 
 if __name__ == '__main__':
     update_dates_to_unix()  # Convert date columns to Unix time on startup
